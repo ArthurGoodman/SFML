@@ -69,7 +69,8 @@ m_isRepeated   (false),
 m_pixelsFlipped(false),
 m_fboAttachment(false),
 m_hasMipmap    (false),
-m_cacheId      (getUniqueId())
+m_cacheId      (getUniqueId()),
+m_pixelFormat  (UByteFormat)
 {
 }
 
@@ -85,7 +86,8 @@ m_isRepeated   (copy.m_isRepeated),
 m_pixelsFlipped(false),
 m_fboAttachment(false),
 m_hasMipmap    (false),
-m_cacheId      (getUniqueId())
+m_cacheId      (getUniqueId()),
+m_pixelFormat  (copy.m_pixelFormat)
 {
     if (copy.m_texture)
         loadFromImage(copy.copyToImage());
@@ -107,7 +109,7 @@ Texture::~Texture()
 
 
 ////////////////////////////////////////////////////////////
-bool Texture::create(unsigned int width, unsigned int height)
+bool Texture::create(unsigned int width, unsigned int height, PixelFormat pixelFormat)
 {
     // Check if texture parameters are valid before creating it
     if ((width == 0) || (height == 0))
@@ -136,6 +138,7 @@ bool Texture::create(unsigned int width, unsigned int height)
     m_actualSize    = actualSize;
     m_pixelsFlipped = false;
     m_fboAttachment = false;
+    m_pixelFormat   = pixelFormat;
 
     TransientContextLock lock;
 
@@ -192,7 +195,7 @@ bool Texture::create(unsigned int width, unsigned int height)
 
     // Initialize the texture
     glCheck(glBindTexture(GL_TEXTURE_2D, m_texture));
-    glCheck(glTexImage2D(GL_TEXTURE_2D, 0, (m_sRgb ? GLEXT_GL_SRGB8_ALPHA8 : GL_RGBA), m_actualSize.x, m_actualSize.y, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL));
+    glCheck(glTexImage2D(GL_TEXTURE_2D, 0, (m_sRgb ? GLEXT_GL_SRGB8_ALPHA8 : (m_pixelFormat == UByteFormat ? GL_RGBA : GL_RGBA32F)), m_actualSize.x, m_actualSize.y, 0, GL_RGBA, m_pixelFormat == UByteFormat ? GL_UNSIGNED_BYTE : GL_FLOAT, NULL));
     glCheck(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, m_isRepeated ? GL_REPEAT : (textureEdgeClamp ? GLEXT_GL_CLAMP_TO_EDGE : GLEXT_GL_CLAMP)));
     glCheck(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, m_isRepeated ? GL_REPEAT : (textureEdgeClamp ? GLEXT_GL_CLAMP_TO_EDGE : GLEXT_GL_CLAMP)));
     glCheck(glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, m_isSmooth ? GL_LINEAR : GL_NEAREST));
@@ -232,6 +235,11 @@ bool Texture::loadFromStream(InputStream& stream, const IntRect& area)
 ////////////////////////////////////////////////////////////
 bool Texture::loadFromImage(const Image& image, const IntRect& area)
 {
+    if (m_pixelFormat == FloatFormat) {
+        err() << "Cannot load float texture from image yet" << std::endl;
+        return false;
+    }
+
     // Retrieve the image size
     int width = static_cast<int>(image.getSize().x);
     int height = static_cast<int>(image.getSize().y);
@@ -307,6 +315,11 @@ Vector2u Texture::getSize() const
 ////////////////////////////////////////////////////////////
 Image Texture::copyToImage() const
 {
+    if (m_pixelFormat == FloatFormat) {
+        err() << "Cannot copy float texture to image yet" << std::endl;
+        return Image();
+    }
+
     // Easy case: empty texture
     if (!m_texture)
         return Image();
@@ -397,6 +410,11 @@ void Texture::update(const Uint8* pixels)
 ////////////////////////////////////////////////////////////
 void Texture::update(const Uint8* pixels, unsigned int width, unsigned int height, unsigned int x, unsigned int y)
 {
+    if (m_pixelFormat == FloatFormat) {
+        err() << "Cannot update float texture yet" << std::endl;
+        return;
+    }
+
     assert(x + width <= m_size.x);
     assert(y + height <= m_size.y);
 
@@ -447,6 +465,11 @@ void Texture::update(const Window& window)
 ////////////////////////////////////////////////////////////
 void Texture::update(const Window& window, unsigned int x, unsigned int y)
 {
+    if (m_pixelFormat == FloatFormat) {
+        err() << "Cannot update float texture yet" << std::endl;
+        return;
+    }
+
     assert(x + window.getSize().x <= m_size.x);
     assert(y + window.getSize().y <= m_size.y);
 
@@ -512,6 +535,11 @@ bool Texture::isSmooth() const
 ////////////////////////////////////////////////////////////
 void Texture::setSrgb(bool sRgb)
 {
+    if (m_pixelFormat == FloatFormat && sRgb) {
+        err() << "Float texture cannot be sRGB" << std::endl;
+        return;
+    }
+
     m_sRgb = sRgb;
 }
 

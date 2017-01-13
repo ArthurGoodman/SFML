@@ -813,6 +813,10 @@ extern int sfogl_ext_ARB_geometry_shader4;
 #define GL_RGBA2 0x8055
 #define GL_RGBA4 0x8056
 #define GL_RGBA8 0x8058
+#define GL_RGBA32F 0x8814
+#define GL_RGB32F 0x8815
+#define GL_RGBA16F 0x881A
+#define GL_RGB16F 0x881B
 #define GL_RGBA_MODE 0x0C31
 #define GL_RIGHT 0x0407
 #define GL_S 0x2000

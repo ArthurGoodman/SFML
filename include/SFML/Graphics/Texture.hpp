@@ -58,6 +58,11 @@ public:
         Pixels      ///< Texture coordinates in range [0 .. size]
     };
 
+    enum PixelFormat {
+        UByteFormat,
+        FloatFormat
+    };
+
 public:
 
     ////////////////////////////////////////////////////////////
@@ -93,7 +98,7 @@ public:
     /// \return True if creation was successful
     ///
     ////////////////////////////////////////////////////////////
-    bool create(unsigned int width, unsigned int height);
+    bool create(unsigned int width, unsigned int height, PixelFormat pixelFormat = UByteFormat);
 
     ////////////////////////////////////////////////////////////
     /// \brief Load the texture from a file on disk
@@ -579,6 +584,7 @@ private:
     bool         m_fboAttachment; ///< Is this texture owned by a framebuffer object?
     bool         m_hasMipmap;     ///< Has the mipmap been generated?
     Uint64       m_cacheId;       ///< Unique number that identifies the texture to the render target's cache
+    PixelFormat  m_pixelFormat;
 };
 
 } // namespace sf
